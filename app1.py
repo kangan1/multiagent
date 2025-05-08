@@ -3,10 +3,12 @@ import streamlit as st
 import os
 import pinecone
 from langchain_community.vectorstores import Pinecone as LangchainPinecone  # Updated import
+from langchain_community.document_loaders import PyPDFLoader
+
 from langchain_openai import OpenAIEmbeddings  # Updated import
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
-from langchain.document_loaders import PyPDFLoader
+# from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 
 # Check internet connection
