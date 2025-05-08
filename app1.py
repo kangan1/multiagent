@@ -1,46 +1,37 @@
 import streamlit as st
 import pinecone
-from llama_index import SimpleDirectoryReader
-from langchain.llms import OpenAI
-from langchain_community.vectorstores import Pinecone
+from langchain.vectorstores import Pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
-from langchain.agents import initialize_agent, Tool
 
-# Step 1: Load Documents using LlamaIndex
-documents = SimpleDirectoryReader('data/').load_data()
+# Load from Streamlit secrets
+pinecone_api_key = st.secrets["PINECONE_API_KEY"]
+pinecone_env = st.secrets["PINECONE_ENVIRONMENT"]
+pinecone_index = st.secrets["PINECONE_INDEX_NAME"]
+openai_api_key = st.secrets["OPENAI_API_KEY"]
 
-# Step 2: Initialize OpenAI LLM
-llm = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# 🔐 Initialize Pinecone
+pinecone.init(api_key=pinecone_api_key, environment=pinecone_env)
 
-# Step 3: Initialize Pinecone
-pinecone.init(api_key=st.secrets["PINECONE_API_KEY"], environment=st.secrets["PINECONE_ENV"])
-index_name = "your-index-name"
+# 🔎 Connect to your Pinecone index
+index = pinecone.Index(pinecone_index)
 
-# Step 4: Create Embeddings and Vector Store
-embedding = OpenAIEmbeddings(openai_api_key=st.secrets["OPENAI_API_KEY"])
+# 🧠 Set up LLM and Embeddings
+llm = ChatOpenAI(api_key=openai_api_key, model="gpt-3.5-turbo")
+embeddings = OpenAIEmbeddings(api_key=openai_api_key)
 
-# Create Pinecone vector store with LangChain wrapper
-vectorstore = Pinecone.from_documents(documents, embedding, index_name=index_name)
+# Create VectorStore
+vectorstore = Pinecone(index, embeddings.embed_query, "text")
 
-# Step 5: Set up RetrievalQA Chain
-qa_chain = RetrievalQA(llm=llm, retriever=vectorstore.as_retriever())
+# RetrievalQA chain
+qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=vectorstore.as_retriever())
 
-# Query and retrieve answer
-query = "Summarize recent case laws related to digital privacy in India."
-response = qa_chain.run(query)
-print(response)
+# Streamlit UI
+st.title("Pinecone + OpenAI RAG App")
+query = st.text_input("Enter your question:")
 
-# Step 6: Initialize Agents (Legal and Medical)
-legal_tool = Tool(name="LegalAgent", func=legal_agent.run, description="Handles legal queries.")
-medical_tool = Tool(name="MedicalAgent", func=medical_agent.run, description="Handles medical queries.")
-
-agents = initialize_agent([legal_tool, medical_tool], llm, agent_type="zero-shot-react-description")
-
-# Step 7: Streamlit Interface for User Input
-st.title("Multi-Agent RAG System")
-user_query = st.text_input("Enter your query:")
-
-if st.button("Submit"):
-    response = agents.run(user_query)
-    st.write(response)
+if st.button("Submit") and query:
+    answer = qa_chain.run(query)
+    st.write("### Answer")
+    st.write(answer)
