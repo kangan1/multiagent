@@ -1,0 +1,8 @@
+streamlit>=1.32.0
+llama-index>=0.12.34
+langchain>=0.1.14
+langchain-community>=0.0.30
+langchain-openai>=0.0.6
+openai>=1.14.3
+weaviate-client>=4.14.1
+python-dotenv
