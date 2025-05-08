@@ -180,7 +180,11 @@ langchain
 langchain-community
 pinecone-client==2.2.4
 streamlit
-langchain openai tiktoken streamlit
+langchain
+openai
+tiktoken
+streamlit
+
 pypdf
 
 
