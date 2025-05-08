@@ -1,3 +1,10 @@
+import requests
+
+try:
+    response = requests.get("https://www.google.com", timeout=5)
+    st.write(f"Google Status Code: {response.status_code}")
+except requests.exceptions.RequestException as e:
+    st.error(f"Error connecting to Google: {e}")
 import os
 import streamlit as st
 import pinecone
