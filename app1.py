@@ -8,7 +8,7 @@ from langchain.chains import RetrievalQA
 from langchain.agents import initialize_agent, Tool
 
 # Step 1: Load Documents using LlamaIndex
-documents = SimpleDirectoryReader('E:/practice/multi_agent/data').load_data()
+documents = SimpleDirectoryReader('data/').load_data()
 
 # Step 2: Initialize OpenAI LLM
 llm = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
