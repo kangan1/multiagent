@@ -1,7 +1,8 @@
 import os
 import streamlit as st
 
-from llama_index.core import SimpleDirectoryReader
+# from llama_index.core import SimpleDirectoryReader
+from llama_index.core.readers import SimpleDirectoryReader
 
 from langchain_community.vectorstores import Weaviate
 from langchain_openai import OpenAI
