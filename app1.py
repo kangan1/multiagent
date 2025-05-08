@@ -19,7 +19,7 @@ os.environ["OPENAI_API_KEY"] = "ysk-proj-JrxvFIX14nNDVpxAyyU-LzhEOQRc6jDIUOBH3QQ
 llm = OpenAI(model="gpt-3.5-turbo", temperature=0.7)
 
 # Load documents
-documents = SimpleDirectoryReader('E:/practice/multi_agent/data').load_data()
+documents = SimpleDirectoryReader('data/').load_data()
 
 # Convert LlamaIndex documents to LangChain format
 lc_documents = [Document(page_content=doc.text) for doc in documents]
