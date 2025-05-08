@@ -1,5 +1,6 @@
 import streamlit as st
 from llama_index.core import SimpleDirectoryReader
+from llama_index import SimpleDirectoryReader
 
 from langchain.chains import RetrievalQA
 from langchain.agents import initialize_agent, Tool
