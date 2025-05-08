@@ -180,3 +180,5 @@ langchain
 langchain-community
 pinecone-client>=3.0.0
 streamlit
+
+
