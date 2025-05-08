@@ -1,4 +1,5 @@
 import requests
+import streamlit as st
 
 try:
     response = requests.get("https://www.google.com", timeout=5)
