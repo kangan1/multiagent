@@ -1,36 +1,51 @@
 import streamlit as st
-import os
-from langchain.vectorstores import Pinecone
+import pinecone
+from langchain.vectorstores import Pinecone as LangchainPinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
-import pinecone
+import os
 
-# Load secrets (defined in Streamlit Cloud → App settings → Secrets)
-pinecone_api_key = st.secrets["PINECONE_API_KEY"]
-pinecone_env = st.secrets["PINECONE_ENVIRONMENT"]
-pinecone_index = st.secrets["PINECONE_INDEX_NAME"]
-openai_api_key = st.secrets["OPENAI_API_KEY"]
+# Load Pinecone API key and environment from Streamlit secrets
+pinecone_api_key = st.secrets["pinecone"]["api_key"]
+pinecone_env = st.secrets["pinecone"]["environment"]
+pinecone_index = st.secrets["pinecone"]["index_name"]  # Optionally specify your index name here
 
-# Initialize Pinecone
-pinecone.init(api_key=pinecone_api_key, environment=pinecone_env)
-index = pinecone.Index(pinecone_index)
+# Initialize Pinecone using the Pinecone class (not init())
+pc = pinecone.Pinecone(api_key=pinecone_api_key)
 
-# Set up LLM + Embeddings
-llm = ChatOpenAI(openai_api_key=openai_api_key, model="gpt-3.5-turbo")
-embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+# Check if the index exists
+if pinecone_index not in pc.list_indexes().names():
+    # If not, create a new index
+    pc.create_index(
+        name=pinecone_index,
+        dimension=1536,  # Based on OpenAI embeddings size
+        metric='cosine',  # Use cosine distance metric
+        spec=pinecone.ServerlessSpec(
+            cloud='aws',
+            region='us-west-2'  # Choose your desired region
+        )
+    )
+
+# Connect to the index
+index = pc.Index(pinecone_index)
+
+# 🧠 Set up LLM and Embeddings
+openai_api_key = st.secrets["openai"]["api_key"]
+llm = ChatOpenAI(api_key=openai_api_key, model="gpt-3.5-turbo")
+embeddings = OpenAIEmbeddings(api_key=openai_api_key)
 
 # Create VectorStore
-vectorstore = Pinecone(index, embeddings.embed_query, "text")
+vectorstore = LangchainPinecone(index, embeddings.embed_query, "text")
 
-# QA Chain
+# RetrievalQA chain
 qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=vectorstore.as_retriever())
 
-# UI
+# Streamlit UI
 st.title("Pinecone + OpenAI RAG App")
 query = st.text_input("Enter your question:")
 
 if st.button("Submit") and query:
     answer = qa_chain.run(query)
-    st.markdown("### Answer")
+    st.write("### Answer")
     st.write(answer)
