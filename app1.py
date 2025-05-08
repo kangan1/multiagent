@@ -4,17 +4,25 @@ from langchain.vectorstores import Pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
+import os
 
-# Load from Streamlit secrets
-pinecone_api_key = st.secrets["PINECONE_API_KEY"]
-pinecone_env = st.secrets["PINECONE_ENVIRONMENT"]
-pinecone_index = st.secrets["PINECONE_INDEX_NAME"]
-openai_api_key = st.secrets["OPENAI_API_KEY"]
+# Initialize Pinecone
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+pinecone_env = os.getenv("PINECONE_ENVIRONMENT")
+pinecone_index = os.getenv("PINECONE_INDEX_NAME")
 
-# 🔐 Initialize Pinecone
 pinecone.init(api_key=pinecone_api_key, environment=pinecone_env)
+index = pinecone.Index(pinecone_index)
 
-# 🔎 Connect to your Pinecone index
+# # Load from Streamlit secrets
+# pinecone_api_key = st.secrets["PINECONE_API_KEY"]
+# pinecone_env = st.secrets["PINECONE_ENVIRONMENT"]
+# pinecone_index = st.secrets["PINECONE_INDEX_NAME"]
+# openai_api_key = st.secrets["OPENAI_API_KEY"]
+
+
+
+pinecone.init(api_key=pinecone_api_key, environment=pinecone_env)
 index = pinecone.Index(pinecone_index)
 
 # 🧠 Set up LLM and Embeddings
