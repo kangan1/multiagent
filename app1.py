@@ -1,44 +1,55 @@
+import os
 import streamlit as st
-from pinecone import Pinecone, ServerlessSpec
+import pinecone
 from langchain.vectorstores import Pinecone as LangchainPinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
+from langchain.document_loaders import PyPDFLoader
+from langchain.text_splitter import CharacterTextSplitter
 
-# Safely access nested secrets
+# Load secrets
+openai_api_key = st.secrets["openai"]["api_key"]
 pinecone_api_key = st.secrets["pinecone"]["api_key"]
 pinecone_env = st.secrets["pinecone"]["environment"]
-pinecone_index_name = st.secrets["pinecone"]["index_name"]
-openai_api_key = st.secrets["openai"]["api_key"]
+pinecone_index = st.secrets["pinecone"]["index_name"]
 
-# Initialize Pinecone
-pc = Pinecone(api_key=pinecone_api_key)
+# Init Pinecone
+pinecone.init(api_key=pinecone_api_key, environment=pinecone_env)
+if pinecone_index not in pinecone.list_indexes():
+    pinecone.create_index(pinecone_index, dimension=1536, metric="cosine")
 
-# Create the index if it doesn't exist
-if pinecone_index_name not in pc.list_indexes().names():
-    pc.create_index(
-        name=pinecone_index_name,
-        dimension=1536,
-        metric="cosine",
-        spec=ServerlessSpec(cloud="aws", region="us-west-2")
-    )
+index = pinecone.Index(pinecone_index)
 
-# Connect to the index
-index = pc.Index(pinecone_index_name)
-
-# Set up embeddings and LLM
+# Set up embedding & LLM
 embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-llm = ChatOpenAI(openai_api_key=openai_api_key, model="gpt-3.5-turbo")
+llm = ChatOpenAI(api_key=openai_api_key, model="gpt-3.5-turbo")
 
-# Vector store and QA chain
-vectorstore = LangchainPinecone(index, embeddings.embed_query, "text")
-qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=vectorstore.as_retriever())
+# Upload PDF
+st.title("📄 PDF QA with Pinecone + LangChain")
+pdf_file = st.file_uploader("Upload your PDF", type="pdf")
+query = st.text_input("Ask a question about the PDF")
 
-# UI
-st.title("Pinecone + OpenAI RAG App")
-query = st.text_input("Enter your question:")
+if pdf_file and query and st.button("Submit"):
 
-if st.button("Submit") and query:
+    # Load PDF and split text
+    with open("temp.pdf", "wb") as f:
+        f.write(pdf_file.read())
+
+    loader = PyPDFLoader("temp.pdf")
+    documents = loader.load()
+
+    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    docs = text_splitter.split_documents(documents)
+
+    # Store in vector DB
+    vectorstore = LangchainPinecone.from_documents(docs, embeddings, index_name=pinecone_index)
+
+    # Create retriever and chain
+    retriever = vectorstore.as_retriever()
+    qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
+
+    # Run QA
     answer = qa_chain.run(query)
-    st.write("### Answer")
+    st.write("### 🧠 Answer:")
     st.write(answer)
