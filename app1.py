@@ -2,7 +2,7 @@ import streamlit as st
 import pinecone
 from llama_index import SimpleDirectoryReader
 from langchain.llms import OpenAI
-from langchain.vectorstores import Pinecone
+from langchain_community.vectorstores import Pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.chains import RetrievalQA
 from langchain.agents import initialize_agent, Tool
